@@ -64,7 +64,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   const decryptMessage = async (m, signature) => {
     const keyPairJSON = localStorage.getItem("keyPair");
- 
+
     const keyPair = JSON.parse(keyPairJSON);
     if (!keyPair) {
       console.log("No key pair found");
@@ -220,7 +220,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       });
 
       const encryptedMessage = a.data.encryptedChunks;
-      const signature = a.data.signatures;
+      const signature = a.data.signedMessage;
 
       try {
         const config = {
@@ -343,7 +343,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       console.log("signature received", signature);
 
       // console.log("message received", data.chat._id);
-      decryptMessage(newMessageReceived.content, signature[0]).then((res) => {
+      decryptMessage(newMessageReceived.content, signature).then((res) => {
         const m = res;
         const data = {
           ...newMessageReceived,
