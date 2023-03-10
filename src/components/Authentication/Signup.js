@@ -27,7 +27,7 @@ const Signup = () => {
   const generateRSAKeyPair = async () => {
     //call rsa api
     const { data } = await axios.get(
-      "http://localhost:3001/api/key/generateKeyPair"
+      "https://e2e-chat-app.onrender.com/api/key/generateKeyPair"
     );
     if (data) {
       const keyPair = {
@@ -124,7 +124,7 @@ const Signup = () => {
         },
       };
       const { data } = await axios.post(
-        " http://localhost:3001/api/user",
+        " https://e2e-chat-app.onrender.com/api/user",
         {
           name,
           email,
