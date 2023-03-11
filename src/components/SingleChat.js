@@ -21,7 +21,7 @@ import io from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
-const ENDPOINT = "http://localhost:3001";
+const ENDPOINT = "https://e2e-chat-app.onrender.com";
 var socket;
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { user, selectedChat, setSelectedChat, notification, setNotification } =
@@ -55,7 +55,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     };
 
     const encryptedResult = await axios.post(
-      "http://localhost:3001/api/key/encryptData",
+      "https://e2e-chat-app.onrender.com/api/key/encryptData",
       postData
     );
 
@@ -93,7 +93,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           };
 
           const { data } = await axios.post(
-            "http://localhost:3001/api/key/decryptData",
+            "https://e2e-chat-app.onrender.com/api/key/decryptData",
             postData
           );
           if (data.status === 200) {
@@ -139,7 +139,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   //       console.log(postData);
 
   //       const { data } = await axios.post(
-  //         "http://localhost:3001/api/key/decryptData",
+  //         "https://e2e-chat-app.onrender.com/api/key/decryptData",
   //         postData
   //       );
   //       if (data.status === 200) {
@@ -192,7 +192,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           headers: { Authorization: `Bearer ${user.token}` },
         };
         await axios.post(
-          "http://localhost:3001/api/salt/",
+          "https://e2e-chat-app.onrender.com/api/salt/",
           {
             _id: selectedChat._id + user._id,
             salt: salt,
@@ -243,7 +243,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       };
       setLoading(true);
       await axios.get(
-        `http://localhost:3001/api/message/${selectedChat._id}`,
+        `https://e2e-chat-app.onrender.com/api/message/${selectedChat._id}`,
         config
       );
 
@@ -286,7 +286,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         };
         setNewMessage("");
         const { data } = await axios.post(
-          "http://localhost:3001/api/message",
+          "https://e2e-chat-app.onrender.com/api/message",
           {
             content: encryptedMessage,
             chatId: selectedChat._id,
@@ -336,7 +336,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       };
 
       const saltData = await axios.get(
-        `http://localhost:3001/api/salt/${room + userId}`,
+        `https://e2e-chat-app.onrender.com/api/salt/${room + userId}`,
         config
       );
 

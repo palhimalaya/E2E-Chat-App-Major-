@@ -87,7 +87,7 @@ function SideDrawer() {
         },
       };
       const { data } = await axios.get(
-        `http://localhost:3001/api/user?search=${search}`,
+        `https://e2e-chat-app.onrender.com/api/user?search=${search}`,
         config
       );
       setLoading(false);
@@ -114,7 +114,7 @@ function SideDrawer() {
         },
       };
       const { data } = await axios.post(
-        "http://localhost:3001/api/chat",
+        "https://e2e-chat-app.onrender.com/api/chat",
         { userId },
         config
       );
