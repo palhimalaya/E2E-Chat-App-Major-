@@ -1,13 +1,5 @@
-import { messages } from "../data/messages";
 import "./styles.css";
-import {
-  Avatar,
-  Tooltip,
-  Box,
-  Text,
-  Input,
-  FormControl,
-} from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { useContext } from "react";
 import { ChatContext } from "../Context/ChatProvider.js";
 import SingleChat from "../components/SingleChat";

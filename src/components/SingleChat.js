@@ -9,7 +9,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, { useCallback, useContext, useState } from "react";
 import { useEffect } from "react";
 import ProfileModal from "../components/miscellaneous/ProfileModel";
 import { getSender, getSenderFull } from "../config/ChatLogics";
@@ -22,7 +22,7 @@ import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 
 const ENDPOINT = "http://localhost:3001";
-var socket, selectedChatCompare;
+var socket;
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { user, selectedChat, setSelectedChat, notification, setNotification } =
     useContext(ChatContext);
@@ -62,46 +62,94 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     return encryptedResult;
   };
 
-  const decryptMessage = async (m, signature) => {
-    const keyPairJSON = localStorage.getItem("keyPair");
+  const decryptMessage = useCallback(
+    async (content, signature, chatId) => {
+      const keyPairJSON = localStorage.getItem("keyPair");
 
-    const keyPair = JSON.parse(keyPairJSON);
-    if (!keyPair) {
-      console.log("No key pair found");
-      localStorage.removeItem("userInfo");
-    } else {
-      var privateKey = keyPair.privateKey;
-    }
-    const othersPublicKey = JSON.parse(localStorage.getItem("othersPublicKey"));
-    if (!othersPublicKey) {
-      console.log("No public key found");
-      return;
-    } else {
-      try {
-        const publicData = othersPublicKey.find(
-          (obj) => obj.chatId === selectedChat._id
-        );
-        var othersKey = publicData.publicKey;
-        const postData = {
-          message: m,
-          privateKey: privateKey,
-          publicKey: othersKey,
-          signature: signature,
-        };
-        console.log(postData);
+      const keyPair = JSON.parse(keyPairJSON);
+      if (!keyPair) {
+        console.log("No key pair found");
+        localStorage.removeItem("userInfo");
+      } else {
+        var privateKey = keyPair.privateKey;
+      }
+      const othersPublicKey = JSON.parse(
+        localStorage.getItem("othersPublicKey")
+      );
+      if (!othersPublicKey) {
+        console.log("No public key found");
+        return;
+      } else {
+        try {
+          const publicData = othersPublicKey.find(
+            (obj) => obj.chatId === chatId
+          );
+          var othersKey = publicData.publicKey;
+          const postData = {
+            message: content,
+            privateKey: privateKey,
+            publicKey: othersKey,
+            signature: signature,
+          };
 
-        const { data } = await axios.post(
-          "http://localhost:3001/api/key/decryptData",
-          postData
-        );
-        if (data.status === 200) {
-          return data.decryptedResult;
-        } else {
+          const { data } = await axios.post(
+            "http://localhost:3001/api/key/decryptData",
+            postData
+          );
+          if (data.status === 200) {
+            return data.decryptedResult;
+          } else {
+            return "";
+          }
+        } catch (error) {
+          console.log("Error while decrypting message: ", error);
           return "";
         }
-      } catch (error) {}
-    }
-  };
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedChat]
+  );
+  // const decryptMessage = async (m, signature) => {
+  //   const keyPairJSON = localStorage.getItem("keyPair");
+
+  //   const keyPair = JSON.parse(keyPairJSON);
+  //   if (!keyPair) {
+  //     console.log("No key pair found");
+  //     localStorage.removeItem("userInfo");
+  //   } else {
+  //     var privateKey = keyPair.privateKey;
+  //   }
+  //   const othersPublicKey = JSON.parse(localStorage.getItem("othersPublicKey"));
+  //   if (!othersPublicKey) {
+  //     console.log("No public key found");
+  //     return;
+  //   } else {
+  //     try {
+  //       const publicData = othersPublicKey.find(
+  //         (obj) => obj.chatId === selectedChat._id
+  //       );
+  //       var othersKey = publicData.publicKey;
+  //       const postData = {
+  //         message: m,
+  //         privateKey: privateKey,
+  //         publicKey: othersKey,
+  //         signature: signature,
+  //       };
+  //       console.log(postData);
+
+  //       const { data } = await axios.post(
+  //         "http://localhost:3001/api/key/decryptData",
+  //         postData
+  //       );
+  //       if (data.status === 200) {
+  //         return data.decryptedResult;
+  //       } else {
+  //         return "";
+  //       }
+  //     } catch (error) {}
+  //   }
+  // };
 
   const defaultOptions = {
     loop: true,
@@ -113,70 +161,77 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   };
   const toast = useToast();
 
-  const fetchLocalMessages = async () => {
-    if (!selectedChat) return;
+  useEffect(() => {
+    let timeoutId;
 
-    try {
-      let key = JSON.parse(localStorage.getItem("keyPair"));
+    const joinChat = async () => {
+      try {
+        // Fetch the public key from local storage
+        const keyPair = JSON.parse(localStorage.getItem("keyPair"));
+        const publicKey = keyPair.publicKey;
 
-      let publicKey = key.publicKey;
+        // Generate a random salt length between 6 to 10 characters
+        const saltLength = Math.floor(Math.random() * 5) + 6;
 
-      // Generate a random salt length between 6 to 10 characters
-      const saltLength = Math.floor(Math.random() * 5) + 6;
+        // Generate a random salt with the chosen length
+        const salt = Math.random()
+          .toString(36)
+          .substring(2, saltLength + 2);
 
-      // Generate a random salt with the chosen length
-      const salt = Math.random()
-        .toString(36)
-        .substring(2, saltLength + 2);
+        // Generate a random position to insert the salt
+        const saltPosition = Math.floor(Math.random() * publicKey.length);
 
-      // Generate a random position to insert the salt
-      const saltPosition = Math.floor(Math.random() * publicKey.length);
+        // Insert the salt at the random position
+        const saltedPublicKey =
+          publicKey.slice(0, saltPosition) +
+          salt +
+          publicKey.slice(saltPosition);
 
-      // Insert the salt at the random position
-      const saltedPublicKey =
-        publicKey.slice(0, saltPosition) + salt + publicKey.slice(saltPosition);
+        // Store the salt in the database
+        const config = {
+          headers: { Authorization: `Bearer ${user.token}` },
+        };
+        await axios.post(
+          "http://localhost:3001/api/salt/",
+          {
+            _id: selectedChat._id + user._id,
+            salt: salt,
+            position: saltPosition,
+          },
+          config
+        );
 
-      const config = {
-        headers: { Authorization: `Bearer ${user.token}` },
-      };
+        // Send the public key to the server
+        const data = {
+          room: selectedChat._id,
+          publicKey: saltedPublicKey,
+          userId: user._id,
+        };
+        socket.emit("join chat", data);
 
-      const saltData = await axios.post(
-        "http://localhost:3001/api/salt/",
-        {
-          _id: selectedChat._id + user._id,
-          salt: salt,
-          position: saltPosition,
-        },
-        config
-      );
+        // Load local messages
+        const localMessages = JSON.parse(
+          localStorage.getItem("localMessages") || "[]"
+        );
+        const filteredMessages = localMessages.filter(
+          (message) => message.chat._id === selectedChat._id
+        );
+        setMessages(filteredMessages);
+        setLoading(false);
+      } catch (error) {
+        console.log(error);
+        setLoading(false);
+      }
+    };
 
-      const data = {
-        room: selectedChat._id,
-        publicKey: saltedPublicKey,
-        userId: user._id,
-      };
+    joinChat();
 
-      socket.emit("join chat", data);
-      const localMessages = JSON.parse(localStorage.getItem("localMessages"));
-      const filteredMessages = localMessages.filter(
-        (message) => message.chat._id === selectedChat._id
-      );
-
-      setMessages(filteredMessages);
-      setLoading(false);
-    } catch (error) {
-      // toast({
-      //   title: "Error Occurred! ",
-      //   description: "Failed to fetch the Messages",
-      //   status: "error",
-      //   duration: 5000,
-      //   isClosable: true,
-      //   position: "bottom",
-      // });
-    }
-
-    // setLocalMessage(localMessagesJSON);
-  };
+    // Clear the timeout if the component unmounts or the selected chat changes
+    return () => {
+      clearTimeout(timeoutId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChat, socket]);
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -187,7 +242,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         },
       };
       setLoading(true);
-      const { data } = await axios.get(
+      await axios.get(
         `http://localhost:3001/api/message/${selectedChat._id}`,
         config
       );
@@ -290,8 +345,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
     const saveData = async () => {
       fetchMessages();
-      fetchLocalMessages();
-      selectedChatCompare = selectedChat;
+      // fetchLocalMessages();
+      // const selectedChatCompare = selectedChat;
       socket.on("public key", async ({ room, saltedPublicKey, userId }) => {
         const saltData = await getSalt(room, userId);
 
@@ -331,45 +386,51 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   }, [selectedChat]);
 
   useEffect(() => {
-    socket.on("message received", (data) => {
-      // setLocalMessage(localMessagesJSON);
+    const handleMessageReceived = (data) => {
       const newMessageReceived = data.newMessageReceived;
       const signature = data.signature;
 
-      console.log(
-        "Encrypted message received",
-        data.newMessageReceived.content
-      );
+      console.log("Encrypted message received", newMessageReceived.content);
       console.log("signature received", signature);
 
-      // console.log("message received", data.chat._id);
-      decryptMessage(newMessageReceived.content, signature).then((res) => {
-        const m = res;
-        const data = {
-          ...newMessageReceived,
-          content: res,
-        };
+      const selectedChatCompare =
+        selectedChat && selectedChat._id === newMessageReceived.chat._id;
 
-        if (
-          !selectedChatCompare || // if chat is not selected or doesn't match current chat
-          selectedChatCompare._id !== newMessageReceived.chat._id
-        ) {
-          //give notification
-          if (!notification.includes(data)) {
-            setNotification([data, ...notification]);
-            //save notification to localStorage
-            setFetchAgain(!fetchAgain);
+      const chatId = newMessageReceived.chat._id;
+
+      decryptMessage(newMessageReceived.content, signature, chatId).then(
+        (res) => {
+          const data = {
+            ...newMessageReceived,
+            content: res,
+          };
+
+          if (!selectedChatCompare) {
+            if (!notification.includes(data)) {
+              setNotification((prev) => [...prev, data]);
+              // save notification to localStorage
+              setFetchAgain(!fetchAgain);
+            }
+            return;
           }
-        } else {
-          setMessages([...messages, data]);
-          localStorage.setItem(
-            "localMessages",
-            JSON.stringify([...messages, data])
-          );
+
+          setMessages((prevMessages) => {
+            const newMessages = [...prevMessages, data];
+            localStorage.setItem("localMessages", JSON.stringify(newMessages));
+            return newMessages;
+          });
         }
-      });
-    });
-  });
+      );
+    };
+
+    socket.on("message received", handleMessageReceived);
+
+    return () => {
+      socket.off("message received", handleMessageReceived);
+    };
+    // add notificationRef and fetchAgain to the dependency array
+    // eslint-disable-next-line
+  }, [decryptMessage, selectedChat, fetchAgain]);
 
   const typingHandle = async (e) => {
     setNewMessage(e.target.value);

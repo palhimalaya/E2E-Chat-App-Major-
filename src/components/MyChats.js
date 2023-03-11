@@ -9,15 +9,8 @@ import { getSender } from "../config/ChatLogics";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
 
 const MyChats = ({ fetchAgain }) => {
-  const {
-    user,
-    selectedChat,
-    setSelectedChat,
-    chats,
-    setChats,
-    publicKey,
-    privateKey,
-  } = useContext(ChatContext);
+  const { user, selectedChat, setSelectedChat, chats, setChats } =
+    useContext(ChatContext);
   const [loggedUser, setLoggedUser] = useState();
   const toast = useToast();
 
@@ -52,6 +45,7 @@ const MyChats = ({ fetchAgain }) => {
   useEffect(() => {
     setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
     fetchChats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchAgain]);
 
   return (

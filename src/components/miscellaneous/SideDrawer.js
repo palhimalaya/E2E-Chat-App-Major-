@@ -50,6 +50,24 @@ function SideDrawer() {
   const navigate = useNavigate();
   const toast = useToast();
 
+  const setMessage = (notif) => {
+    try {
+      const prevMessages = JSON.parse(localStorage.getItem("localMessages"));
+
+      localStorage.setItem(
+        "localMessages",
+        JSON.stringify([...prevMessages, notif])
+      );
+
+      setNotification(notification.filter((n) => n !== notif));
+    } catch (error) {
+      localStorage.setItem("localMessages", JSON.stringify([notif]));
+
+      setNotification(notification.filter((n) => n !== notif));
+    }
+    return;
+  };
+
   const handleSearch = async () => {
     if (!search) {
       toast({
@@ -167,7 +185,7 @@ function SideDrawer() {
                   key={notif._id}
                   onClick={() => {
                     setSelectedChat(notif.chat);
-                    setNotification(notification.filter((n) => n !== notif));
+                    setMessage(notif);
                   }}
                 >
                   {notif.chat.isGroupChat
