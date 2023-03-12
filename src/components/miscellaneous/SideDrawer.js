@@ -42,6 +42,7 @@ function SideDrawer() {
   const {
     user,
     setSelectedChat,
+
     chats,
     setChats,
     notification,
@@ -49,6 +50,11 @@ function SideDrawer() {
   } = useContext(ChatContext);
   const navigate = useNavigate();
   const toast = useToast();
+
+  const setMessage = (notif) => {
+    setNotification(notification.filter((n) => n !== notif));
+    return;
+  };
 
   const handleSearch = async () => {
     if (!search) {
@@ -167,7 +173,7 @@ function SideDrawer() {
                   key={notif._id}
                   onClick={() => {
                     setSelectedChat(notif.chat);
-                    setNotification(notification.filter((n) => n !== notif));
+                    setMessage(notif);
                   }}
                 >
                   {notif.chat.isGroupChat
