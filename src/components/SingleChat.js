@@ -110,46 +110,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedChat]
   );
-  // const decryptMessage = async (m, signature) => {
-  //   const keyPairJSON = localStorage.getItem("keyPair");
-
-  //   const keyPair = JSON.parse(keyPairJSON);
-  //   if (!keyPair) {
-  //     console.log("No key pair found");
-  //     localStorage.removeItem("userInfo");
-  //   } else {
-  //     var privateKey = keyPair.privateKey;
-  //   }
-  //   const othersPublicKey = JSON.parse(localStorage.getItem("othersPublicKey"));
-  //   if (!othersPublicKey) {
-  //     console.log("No public key found");
-  //     return;
-  //   } else {
-  //     try {
-  //       const publicData = othersPublicKey.find(
-  //         (obj) => obj.chatId === selectedChat._id
-  //       );
-  //       var othersKey = publicData.publicKey;
-  //       const postData = {
-  //         message: m,
-  //         privateKey: privateKey,
-  //         publicKey: othersKey,
-  //         signature: signature,
-  //       };
-  //       console.log(postData);
-
-  //       const { data } = await axios.post(
-  //         "https://e2e-chat-app.onrender.com/api/key/decryptData",
-  //         postData
-  //       );
-  //       if (data.status === 200) {
-  //         return data.decryptedResult;
-  //       } else {
-  //         return "";
-  //       }
-  //     } catch (error) {}
-  //   }
-  // };
 
   const defaultOptions = {
     loop: true,
@@ -165,6 +125,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     let timeoutId;
 
     const joinChat = async () => {
+      setNotification([]);
       try {
         // Fetch the public key from local storage
         const keyPair = JSON.parse(localStorage.getItem("keyPair"));
@@ -211,12 +172,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
         // Load local messages
         const localMessages = JSON.parse(
-          localStorage.getItem("localMessages") || "[]"
+          localStorage.getItem("localMessages_" + selectedChat._id) || "[]"
         );
-        const filteredMessages = localMessages.filter(
-          (message) => message.chat._id === selectedChat._id
-        );
-        setMessages(filteredMessages);
+        const messages =
+          localMessages.filter(
+            (message) => message.chat._id === selectedChat._id
+          ) || [];
+        setMessages(messages);
         setLoading(false);
       } catch (error) {
         console.log(error);
@@ -304,7 +266,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         //save updatedMessageReceived to local storage
         setMessages([...messages, updatedMessageReceived]);
         localStorage.setItem(
-          "localMessages",
+          "localMessages_" + selectedChat._id,
           JSON.stringify([...messages, updatedMessageReceived])
         );
       } catch (error) {
@@ -324,7 +286,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
     socket.on("connected", () => setSocketConnected(true));
-    socket.on("typing", () => setIsTyping(true));
+
+    socket.on("typing", (room) => setIsTyping(true));
     socket.on("stop typing", () => setIsTyping(false));
     // eslint-disable-next-line
   }, []);
@@ -408,6 +371,39 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           if (!selectedChatCompare) {
             if (!notification.includes(data)) {
               setNotification((prev) => [...prev, data]);
+
+              if (
+                localStorage.getItem(
+                  "localMessages_" + newMessageReceived.chat._id
+                )
+              ) {
+                const localMessages = JSON.parse(
+                  localStorage.getItem(
+                    "localMessages_" + newMessageReceived.chat._id
+                  )
+                );
+                const newMessages = [...localMessages, data];
+                localStorage.setItem(
+                  "localMessages_" + newMessageReceived.chat._id,
+                  JSON.stringify(newMessages)
+                );
+                setMessages((prevMessages) => {
+                  const newMessages = [...prevMessages, data];
+
+                  return newMessages;
+                });
+              } else {
+                localStorage.setItem(
+                  "localMessages_" + newMessageReceived.chat._id,
+                  JSON.stringify([data])
+                );
+                setMessages((prevMessages) => {
+                  const newMessages = [...prevMessages, data];
+
+                  return newMessages;
+                });
+              }
+
               // save notification to localStorage
               setFetchAgain(!fetchAgain);
             }
@@ -416,7 +412,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
           setMessages((prevMessages) => {
             const newMessages = [...prevMessages, data];
-            localStorage.setItem("localMessages", JSON.stringify(newMessages));
+            localStorage.setItem(
+              "localMessages_" + selectedChat._id,
+              JSON.stringify(newMessages)
+            );
             return newMessages;
           });
         }

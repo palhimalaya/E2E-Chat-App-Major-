@@ -42,6 +42,7 @@ function SideDrawer() {
   const {
     user,
     setSelectedChat,
+
     chats,
     setChats,
     notification,
@@ -51,20 +52,7 @@ function SideDrawer() {
   const toast = useToast();
 
   const setMessage = (notif) => {
-    try {
-      const prevMessages = JSON.parse(localStorage.getItem("localMessages"));
-
-      localStorage.setItem(
-        "localMessages",
-        JSON.stringify([...prevMessages, notif])
-      );
-
-      setNotification(notification.filter((n) => n !== notif));
-    } catch (error) {
-      localStorage.setItem("localMessages", JSON.stringify([notif]));
-
-      setNotification(notification.filter((n) => n !== notif));
-    }
+    setNotification(notification.filter((n) => n !== notif));
     return;
   };
 
