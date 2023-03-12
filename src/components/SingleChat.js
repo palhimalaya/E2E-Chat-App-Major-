@@ -140,7 +140,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         headers: { Authorization: `Bearer ${user.token}` },
       };
 
-      const saltData = await axios.post(
+      await axios.post(
         "https://e2e-chat-app.onrender.com/api/salt/",
         {
           _id: selectedChat._id + user._id,

@@ -22,7 +22,7 @@ import { useContext, useState } from "react";
 import { ChatContext } from "../../Context/ChatProvider";
 import { useDisclosure } from "@chakra-ui/hooks";
 import ProfileModal from "./ProfileModel";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
 import ChatLoading from "../ChatLoading";
@@ -149,7 +149,7 @@ function SideDrawer() {
           </Button>
         </Tooltip>
         <Text fontSize="2xl" fontFamily="Work sans">
-          E2E CHAT APP
+          <Link to={"/"}>E2E CHAT APP</Link>
         </Text>
         <div>
           <Menu>
